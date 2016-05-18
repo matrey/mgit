@@ -3,15 +3,22 @@
 DIR="$( pwd )"
 PARAMS=("$@")
 
-# We need at least #0 (project code) and #1 (git verb)
-if [[ -z "${PARAMS[0]}" ]]; then
+project_codes(){
   echo "Project codes available here:" >&2
   ls -A1 | grep ^\.mgit\. | sed -e 's/^\.mgit\./* /g' >&2
-  echo -e "\nUsage: mgit <project code> ... rest of git command ...\nNote that mgit clone is overridden and only expects the repo URL\n" >&2
-  exit 1
-fi
-if [[ -z "${PARAMS[1]}" ]]; then
+  echo >&2
+}
+
+usage(){
   echo -e "Usage: mgit <project code> ... rest of git command ...\nNote that mgit clone is overridden and only expects the repo URL\n" >&2
+}
+
+# We need at least #0 (project code) and #1 (git verb)
+if [[ -z "${PARAMS[1]}" ]]; then
+  if [[ -z "${PARAMS[0]}" ]]; then
+    project_codes
+  fi
+  usage
   exit 1
 fi
 
@@ -47,9 +54,8 @@ case "$2" in
   *)
     if [[ ! -d "$DIR/$GITFOLDER" ]]; then
       echo "Unknown project '$SUFFIX'!" >&2
-      echo "Project codes available here:" >&2
-      ls -A1 | grep ^\.mgit\. | sed -e 's/^\.mgit\./* /g' >&2
-      echo -e "\nUsage: mgit <project code> ... rest of git command ...\nNote that mgit clone is overridden and only expects the repo URL\n" >&2
+      project_codes
+      usage
       exit 1
     fi
 

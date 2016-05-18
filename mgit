@@ -1,0 +1,58 @@
+#!/bin/bash
+
+DIR="$( pwd )"
+PARAMS=("$@")
+
+# We need at least #0 (project code) and #1 (git verb)
+if [[ -z "${PARAMS[0]}" ]]; then
+  echo "Project codes available here:" >&2
+  ls -A1 | grep ^\.mgit\. | sed -e 's/^\.mgit\./* /g' >&2
+  echo -e "\nUsage: mgit <project code> ... rest of git command ...\nNote that mgit clone is overridden and only expects the repo URL\n" >&2
+  exit 1
+fi
+if [[ -z "${PARAMS[1]}" ]]; then
+  echo -e "Usage: mgit <project code> ... rest of git command ...\nNote that mgit clone is overridden and only expects the repo URL\n" >&2
+  exit 1
+fi
+
+SUFFIX="$( echo "${PARAMS[0]}" | sed 's/[^a-zA-Z0-9]//g' )"
+GITFOLDER=".mgit.$SUFFIX"
+
+case "$2" in
+  "clone")
+    if [[ -d "$DIR/$GITFOLDER" ]]; then
+      echo "There is already a project with code '$SUFFIX' in here!" >&2
+      exit 1
+    fi
+
+    TMPFOLDER=".mgit-tmp-$SUFFIX"
+
+    git clone "${PARAMS[2]}" "$TMPFOLDER"
+    if [[ "$?" -ne "0" ]]; then
+      echo "git clone failed!" >&2
+      exit 1
+    fi
+
+    # Move .git to its target location
+    mv "$TMPFOLDER/.git" "$GITFOLDER"
+    # Ignore all files that are not in the index
+    echo "**" > "$GITFOLDER/info/exclude"
+    # Move the checked out'ed contents but without overwriting. 
+    # Note: will miss hidden files and subfolders
+    yes | tr y n | mv -i $TMPFOLDER/* .
+    
+    rm -rf "$TMPFOLDER"    
+
+    ;;
+  *)
+    if [[ ! -d "$DIR/$GITFOLDER" ]]; then
+      echo "Unknown project '$SUFFIX'!" >&2
+      echo "Project codes available here:" >&2
+      ls -A1 | grep ^\.mgit\. | sed -e 's/^\.mgit\./* /g' >&2
+      echo -e "\nUsage: mgit <project code> ... rest of git command ...\nNote that mgit clone is overridden and only expects the repo URL\n" >&2
+      exit 1
+    fi
+
+    GIT_DIR="$GITFOLDER" git "${PARAMS[@]:1}"
+    ;;
+esac

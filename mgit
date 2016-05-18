@@ -62,6 +62,9 @@ case "$2" in
       echo "ssh -i \"$DEPLOYKEY\" \"\$@\"" >> "$TMPSSH"
       chmod +x "$TMPSSH"
 
+      # Add a trap in case the clone fails, to cleanup the temporary script
+      trap 'rm -f "$TMPSSH"' 0
+
       GIT_SSH="${DIR}/${TMPSSH}" git clone "${PARAMS[2]}" "$TMPFOLDER"
     else
       git clone "${PARAMS[2]}" "$TMPFOLDER"

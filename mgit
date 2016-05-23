@@ -92,6 +92,12 @@ case "$2" in
     fi
 
     ;;
+  "init")
+    # If we don't set GIT_WORK_TREE we end up with "fatal: This operation must be run in a work tree" errors on subsequent git commands
+    GIT_WORK_TREE=. GIT_DIR="$GITFOLDER" git "${PARAMS[@]:1}"
+    # Ignore all files by default
+    echo "**" > "$GITFOLDER/info/exclude"
+    ;;
   *)
     if [[ ! -d "$DIR/$GITFOLDER" ]]; then
       echo "Unknown project '$SUFFIX'!" >&2

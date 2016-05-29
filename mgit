@@ -5,16 +5,7 @@ PARAMS=("$@")
 
 project_codes(){
   echo "Project codes available here:" >&2
-  SAVEIFS=$IFS
-  IFS=$(echo -en "\n\b")
-  for FILE in .mgit.*; do
-    if [[ "$FILE" = '.mgit.*' ]]; then
-      continue
-    fi
-    echo "${FILE/.mgit./* }" >&2
-  done
-  IFS=$SAVEIFS
-
+  find . -maxdepth 1 -type d -name ".mgit.*" -execdir basename '{}' \; | sed -e 's/^\.mgit\./* /' >&2
   echo >&2
 }
 
@@ -79,10 +70,21 @@ case "$2" in
     mv "$TMPFOLDER/.git" "$GITFOLDER"
     # Ignore all files that are not in the index
     echo "**" > "$GITFOLDER/info/exclude"
-    # Move the checked out'ed contents but without overwriting. 
-    # Note: we don't try (but might) to make a perfect copy (might miss hidden files and subfolders)
-    # But that's not the use case for mgit anyway
-    yes | tr y n | mv -i "$TMPFOLDER"/* .
+
+    # Move the checkout'ed contents but without overwriting. 
+    # We take only first level files, that are not hidden, and whose name (without extension) is not all uppercase
+    SAVEIFS=$IFS
+    IFS=$(echo -en "\n\b")
+    CANDIDATES=( $( find "$TMPFOLDER" -maxdepth 1 -type f -execdir basename '{}' \; | grep -v '^[A-Z]\+$' | grep -v '^[A-Z]\+\..*' | grep -v '^\.' ) )
+    IFS=$SAVEIFS
+    for FILE in "${CANDIDATES[@]}"; do
+      if [[ ! -f "$DIR/$FILE" ]]; then
+        cp "$TMPFOLDER/$FILE" . 
+        echo " Added new file \"$FILE\"" >&2
+      else
+        echo " Skipped file \"$FILE\" because a file with such a name already exists" >&2
+      fi
+    done
     
     rm -rf "$TMPFOLDER"    
 

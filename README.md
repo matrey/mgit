@@ -3,7 +3,7 @@ For versioning just 1 file (or a handful), in the middle of a non-empty folder a
 
 ### How it works
 
-This wrapper acts on GIT_DIR to force git to use a custom folder (.mgit.<project code>), therefore allowing several projects to coexist in the same path.
+This wrapper acts on GIT_DIR to force git to use a custom folder (```.mgit.<project code>```), therefore allowing several projects to coexist in the same path.
 
 The clone function is also reworked, so that it:
 * does not complain about the working directory being non-empty
